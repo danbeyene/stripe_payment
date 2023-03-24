@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:stripe_payment/constants.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -14,7 +13,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   Map<String, dynamic>? paymentIntent;
 
   @override
@@ -26,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Center(
         child: TextButton(
           child: const Text('Make Payment'),
-          onPressed: ()async{
+          onPressed: () async {
             await makePayment();
           },
         ),
@@ -38,15 +36,20 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       paymentIntent = await createPaymentIntent('10', 'USD');
       //Payment Sheet
-      await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-              paymentIntentClientSecret: paymentIntent!['client_secret'],
-              applePay: const PaymentSheetApplePay(merchantCountryCode: '+92',),
-              googlePay: const PaymentSheetGooglePay(testEnv: true, currencyCode: "US", merchantCountryCode: "+92"),
-              style: ThemeMode.dark,
-              merchantDisplayName: 'Dagnachew')).then((value){
-      });
-
+      await Stripe.instance
+          .initPaymentSheet(
+              paymentSheetParameters: SetupPaymentSheetParameters(
+                  paymentIntentClientSecret: paymentIntent!['client_secret'],
+                  applePay: const PaymentSheetApplePay(
+                    merchantCountryCode: 'US',
+                  ),
+                  googlePay: const PaymentSheetGooglePay(
+                      testEnv: true,
+                      currencyCode: "USD",
+                      merchantCountryCode: "US"),
+                  style: ThemeMode.dark,
+                  merchantDisplayName: 'Dagnachew'))
+          .then((value) {});
 
       ///now finally display payment sheeet
       displayPaymentSheet();
@@ -56,43 +59,46 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   displayPaymentSheet() async {
-
     try {
-      await Stripe.instance.presentPaymentSheet(
-      ).then((value){
+      await Stripe.instance.presentPaymentSheet().then((value) {
         showDialog(
             context: context,
             builder: (_) => AlertDialog(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.check_circle, color: Colors.green,),
-                      Text("Payment Successfull"),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                          ),
+                          Text("Payment Successful"),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ));
+                ));
         // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("paid successfully")));
 
         paymentIntent = null;
-
-      }).onError((error, stackTrace){
-        print('Error is:--->$error $stackTrace');
+      }).onError((error, stackTrace) {
+        print('======================= Error is:--->$error \$stackTrace');
+        showDialog(
+            context: context,
+            builder: (_) => const AlertDialog(
+              content: Text("Cancelled ",),
+            ));
       });
-
-
     } on StripeException catch (e) {
-      print('Error is:---> $e');
+      print('================== initialize Stripe Error is:---> $e');
       showDialog(
           context: context,
           builder: (_) => const AlertDialog(
-            content: Text("Cancelled "),
-          ));
+                content: Text("Cancelled ",),
+              ));
     } catch (e) {
-      print('$e');
+      print('==================== $e');
     }
   }
 
@@ -114,7 +120,8 @@ class _HomeScreenState extends State<HomeScreen> {
         body: body,
       );
       // ignore: avoid_print
-      print('Payment Intent Body->>> ${response.body.toString()}');
+      print('============================================================');
+      print('Payment Intent Body->>> ${jsonDecode(response.body)}');
       return jsonDecode(response.body);
     } catch (err) {
       // ignore: avoid_print
@@ -123,8 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   calculateAmount(String amount) {
-    final calculatedAmount = (int.parse(amount)) * 100 ;
+    final calculatedAmount = (int.parse(amount)) * 100;
     return calculatedAmount.toString();
   }
-
 }
